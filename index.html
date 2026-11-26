@@ -47,6 +47,25 @@
       button { padding: 8px 10px; }
       pre { padding: 14px; font-size: 12px; }
     }
+
+    .revision {
+      margin-top: 28px; padding: 22px; border: 1px solid #e2e3de;
+      border-radius: 12px; background: #fff;
+    }
+    .revision h2 { margin: 0 0 14px; font-size: 20px; }
+    .revision h3 { margin: 20px 0 8px; font-size: 15px; }
+    .revision p, .revision li { color: #55584f; line-height: 1.55; font-size: 13px; }
+    .revision ul { padding-left: 20px; margin: 7px 0; }
+    .revision table { width: 100%; border-collapse: collapse; margin: 8px 0 14px; font-size: 13px; }
+    .revision th, .revision td { padding: 8px 10px; border: 1px solid #e8e9e4; text-align: left; }
+    .revision th { background: #f5f6f2; }
+    .revision code { background: #f2f3ef; padding: 2px 4px; border-radius: 4px; }
+    .revision pre { border-radius: 8px; margin: 8px 0; }
+    @media (max-width: 520px) {
+      .revision { padding: 16px; overflow-x: auto; }
+      .revision table { min-width: 460px; }
+    }
+
   </style>
 </head>
 <body>
@@ -55,8 +74,9 @@
     <div class="eyebrow">World Explorer · PHP / PDO</div>
     <h1>World Explorer — Code Files</h1>
     <p>Copy one file at a time, or copy all four files together.</p>
-    <div style="margin-top:16px">
+    <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap">
       <button type="button" id="copy-all">Copy All</button>
+      <button type="button" id="copy-qc">Copy QC</button>
     </div>
   </header>
 
@@ -376,6 +396,71 @@ else {
 }</code></pre>
   </section>
 
+
+  <section class="revision" aria-labelledby="revision-title">
+    <div class="eyebrow">Révision d'examen</div>
+    <h2 id="revision-title">Résumé — Fichiers, Upload, Sessions et Cookies</h2>
+
+    <h3>1. Manipulation des fichiers</h3>
+    <table>
+      <tr><th>Fonction</th><th>Rôle</th></tr>
+      <tr><td><code>fopen()</code></td><td>Ouvrir un fichier</td></tr>
+      <tr><td><code>fclose()</code></td><td>Fermer un fichier</td></tr>
+      <tr><td><code>fwrite()</code></td><td>Écrire dans un fichier</td></tr>
+      <tr><td><code>fgets()</code></td><td>Lire une ligne</td></tr>
+      <tr><td><code>file_get_contents()</code></td><td>Lire tout le fichier</td></tr>
+      <tr><td><code>file_put_contents()</code></td><td>Écrire tout le contenu</td></tr>
+      <tr><td><code>file_exists()</code></td><td>Vérifier l'existence du fichier</td></tr>
+    </table>
+    <p><strong>Modes :</strong> <code>r</code> = lecture · <code>w</code> = écriture (efface l'ancien contenu) · <code>a</code> = ajout à la fin · <code>r+</code> = lecture et écriture sans effacer.</p>
+
+    <h3>2. Upload de fichiers</h3>
+    <p><strong>Formulaire obligatoire :</strong> <code>method="POST"</code> et <code>enctype="multipart/form-data"</code>.</p>
+    <pre><code>&lt;form method="POST" enctype="multipart/form-data"&gt;
+    &lt;input type="file" name="fichier"&gt;
+    &lt;button type="submit"&gt;Envoyer&lt;/button&gt;
+&lt;/form&gt;</code></pre>
+    <p><strong><code>$_FILES</code> :</strong> <code>name</code> = nom · <code>type</code> = type MIME · <code>size</code> = taille · <code>tmp_name</code> = emplacement temporaire · <code>error</code> = code d'erreur.</p>
+    <p><strong>Fonctions :</strong> <code>pathinfo()</code> récupère l'extension · <code>strtolower()</code> convertit en minuscules · <code>in_array()</code> vérifie une valeur · <code>move_uploaded_file()</code> déplace le fichier.</p>
+
+    <h3>3. Gestion des sessions</h3>
+    <p>Une session conserve les informations d'un utilisateur entre plusieurs requêtes HTTP. Les données sont stockées <strong>côté serveur</strong>.</p>
+    <pre><code>session_start();
+$_SESSION['user'] = "admin"; // Créer
+echo $_SESSION['user'];      // Lire
+unset($_SESSION['user']);   // Supprimer une variable
+session_destroy();          // Détruire la session</code></pre>
+    <p><strong>Protéger une page :</strong></p>
+    <pre><code>session_start();
+if (!isset($_SESSION['user'])) {
+    header("Location: connexion.php");
+    exit;
+}</code></pre>
+    <p><code>session_regenerate_id(true)</code> renouvelle l'identifiant de session.</p>
+
+    <h3>4. Gestion des cookies</h3>
+    <p>Un cookie conserve une petite information <strong>côté navigateur (client)</strong>.</p>
+    <pre><code>setcookie('theme', 'dark', time() + 3600, '/'); // Créer
+echo $_COOKIE['theme'];                         // Lire
+setcookie('theme', '', time() - 3600, '/');    // Supprimer</code></pre>
+    <p><strong>Paramètres :</strong> <code>expires</code> = expiration · <code>path</code> = chemin · <code>secure</code> = HTTPS uniquement · <code>httponly</code> = inaccessible via JavaScript · <code>samesite</code> = contrôle l'envoi intersites.</p>
+
+    <h3>5. Différences et rappels essentiels</h3>
+    <table>
+      <tr><th>Sessions</th><th>Cookies</th></tr>
+      <tr><td>Stockées sur le serveur</td><td>Stockés dans le navigateur</td></tr>
+      <tr><td><code>$_SESSION</code></td><td><code>$_COOKIE</code></td></tr>
+      <tr><td><code>session_start()</code></td><td><code>setcookie()</code></td></tr>
+      <tr><td>Adaptées à l'authentification</td><td>Adaptés aux préférences</td></tr>
+    </table>
+    <ul>
+      <li><code>unset()</code> supprime une variable ; <code>session_destroy()</code> détruit la session.</li>
+      <li><code>isset()</code> vérifie si une variable existe ; <code>header()</code> envoie un en-tête HTTP ou effectue une redirection ; <code>time()</code> retourne le timestamp actuel.</li>
+      <li><code>session_start()</code> et <code>setcookie()</code> doivent être appelés avant tout affichage HTML.</li>
+      <li>Un cookie nouvellement créé est généralement disponible dans <code>$_COOKIE</code> à la requête suivante.</li>
+    </ul>
+  </section>
+
   <p class="notice" id="notice" role="status" aria-live="polite"></p>
 </main>
 
@@ -409,6 +494,31 @@ else {
 
   document.querySelectorAll('[data-copy]').forEach(button => {
     button.addEventListener('click', () => copyCode(button.dataset.copy, button));
+  });
+
+  document.getElementById('copy-qc').addEventListener('click', async (event) => {
+    const summary = document.querySelector('.revision').innerText;
+    try {
+      await navigator.clipboard.writeText(summary);
+    } catch (error) {
+      const temporary = document.createElement('textarea');
+      temporary.value = summary;
+      temporary.style.position = 'fixed';
+      temporary.style.opacity = '0';
+      document.body.appendChild(temporary);
+      temporary.select();
+      const copied = document.execCommand('copy');
+      temporary.remove();
+      if (!copied) {
+        notice.textContent = 'Copy failed. Please select and copy the revision summary manually.';
+        return;
+      }
+    }
+
+    const button = event.currentTarget;
+    button.textContent = 'Copied QC!';
+    notice.textContent = 'Exam revision summary copied to clipboard.';
+    window.setTimeout(() => { button.textContent = 'Copy QC'; }, 1600);
   });
 
   document.getElementById('copy-all').addEventListener('click', async (event) => {
