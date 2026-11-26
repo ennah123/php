@@ -211,6 +211,171 @@ class Database
     }
 }</code></pre>
   </section>
+
+  <section class="snippet" aria-labelledby="country-crud-title">
+    <div class="snippet-head">
+      <div class="file-title">
+        <h2 id="country-crud-title">Country CRUD — Complete Code</h2>
+        <p>CountryController · Country Model · Create View · Database Config · index.php</p>
+      </div>
+      <button type="button" data-copy="country-crud-code">Copy code</button>
+    </div>
+    <pre><code id="country-crud-code">FILE: controllers/CountryController.php
+------------------------------------------------------------------------
+
+&lt;?php 
+require_once __DIR__ . &quot;/../../app/models/Country.php&quot;;
+class CountryController{
+    private Country $country;
+
+    public function __construct() {
+        $this-&gt;country = new Country();
+    }
+    public function dashboard(){
+        $name = trim($_GET[&#x27;country&#x27;] ?? &#x27;&#x27;);
+        $countries = $name ? $this-&gt;country-&gt;search($name) : $this-&gt;country-&gt;getAll();
+        $totalCountries = $this-&gt;country-&gt;countCountries();
+        $totalContinents = $this-&gt;country-&gt;countContinents();
+        $totalPopulation = $this-&gt;country-&gt;getTotalPopulation();
+        $mostPopulated = $this-&gt;country-&gt;getMostPopulated();
+        require_once __DIR__ . &quot;/../../app/views/dashboard.php&quot;;
+    }
+    public function create(){
+        require_once __DIR__ . &quot;/../../app/views/create.php&quot;;
+    }
+
+    public function store(){
+        $name = $_POST[&#x27;name&#x27;];
+        $iso_code = $_POST[&#x27;iso_code&#x27;];
+        $capital = $_POST[&#x27;capital&#x27;];
+        $continent = $_POST[&#x27;continent&#x27;];
+        $population = $_POST[&#x27;population&#x27;];
+        $currency = $_POST[&#x27;currency&#x27;];
+
+        $this-&gt;country-&gt;add($name, $iso_code, $capital, $continent, $population, $currency);
+
+        header(&quot;Location: index.php&quot;);
+        exit;
+    }
+    public function delete(){
+        $id = $_GET[&#x27;id&#x27;];
+
+        $this-&gt;country-&gt;delete($id);
+
+        header(&quot;Location: index.php&quot;);
+        exit;
+    }
+}
+
+========================================================================
+
+FILE: models/Country.php
+------------------------------------------------------------------------
+
+&lt;?php
+require_once __DIR__ . &quot;/../../config/connection.php&quot;;
+
+class Country {
+    private $pdo;
+    public function __construct() {
+        $this-&gt;pdo = DataBase::connection();
+    }
+    public function getAll(){
+        return $this-&gt;pdo-&gt;query(&quot;SELECT * FROM country ORDER BY name ASC&quot;)-&gt;fetchAll();
+    }
+    public function search($name){
+        return $this-&gt;pdo-&gt;query(&quot;SELECT * FROM country WHERE name like &#x27;%$name%&#x27;&quot;)-&gt;fetchAll();
+    }
+    public function countCountries(){
+        return $this-&gt;pdo-&gt;query(&quot;SELECT COUNT(*) FROM country&quot;)-&gt;fetchColumn();
+    }
+    public function countContinents(){
+        return $this-&gt;pdo-&gt;query(&quot;SELECT COUNT(DISTINCT continent) FROM country&quot;)-&gt;fetchColumn();
+    }
+    public function getTotalPopulation(){
+        return $this-&gt;pdo-&gt;query(&quot;SELECT SUM(population) FROM country&quot;)-&gt;fetchColumn();
+    }
+    public function getMostPopulated(){
+        return $this-&gt;pdo-&gt;query(&quot;SELECT name, population FROM country ORDER BY population DESC LIMIT 1&quot;)-&gt;fetch();
+    }
+    public function add($name, $iso_code, $capital, $continent, $population, $currency){
+        return $this-&gt;pdo-&gt;query(
+            &quot;INSERT INTO country (name, iso_code, capital, continent, population, currency)
+            VALUES (&#x27;$name&#x27;, &#x27;$iso_code&#x27;, &#x27;$capital&#x27;, &#x27;$continent&#x27;, &#x27;$population&#x27;, &#x27;$currency&#x27;)&quot;
+        );
+    }
+    public function delete($id){
+        return $this-&gt;pdo-&gt;query(&quot;DELETE FROM country WHERE id = $id&quot;);
+    }
+}
+
+========================================================================
+
+FILE: views/create.php
+------------------------------------------------------------------------
+
+&lt;h2&gt;Add Country&lt;/h2&gt;
+
+&lt;form action=&quot;index.php?action=store&quot; method=&quot;POST&quot;&gt;
+
+    &lt;input type=&quot;text&quot; name=&quot;name&quot; placeholder=&quot;Country name&quot; required&gt;
+
+    &lt;input type=&quot;text&quot; name=&quot;iso_code&quot; placeholder=&quot;ISO Code&quot; required&gt;
+
+    &lt;input type=&quot;text&quot; name=&quot;capital&quot; placeholder=&quot;Capital&quot; required&gt;
+
+    &lt;input type=&quot;text&quot; name=&quot;continent&quot; placeholder=&quot;Continent&quot; required&gt;
+
+    &lt;input type=&quot;number&quot; name=&quot;population&quot; placeholder=&quot;Population&quot; required&gt;
+
+    &lt;input type=&quot;text&quot; name=&quot;currency&quot; placeholder=&quot;Currency&quot; required&gt;
+
+    &lt;button type=&quot;submit&quot;&gt;Add Country&lt;/button&gt;
+
+&lt;/form&gt;
+
+========================================================================
+
+FILE: config/connection.php
+------------------------------------------------------------------------
+
+&lt;?php
+class DataBase {
+    public static function connection(){
+        return new PDO(&quot;mysql:host=localhost;dbname=world_explorer;&quot;, &quot;root&quot;, &quot;root&quot;, [
+            PDO::ATTR_ERRMODE =&gt; PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE =&gt; PDO::FETCH_ASSOC
+        ]);
+    }
+}
+
+========================================================================
+
+FILE: public/index.php
+------------------------------------------------------------------------
+
+&lt;?php
+require_once __DIR__ . &quot;/../app/controllers/CountryController.php&quot;;
+
+$controller = new CountryController();
+
+
+$action = $_GET[&#x27;action&#x27;] ?? &#x27;dashboard&#x27;;
+
+if ($action == &#x27;create&#x27;) {
+    $controller-&gt;create();
+}
+elseif ($action == &#x27;store&#x27;) {
+    $controller-&gt;store();
+}
+elseif ($action == &#x27;delete&#x27;) {
+    $controller-&gt;delete();
+}
+else {
+    $controller-&gt;dashboard();
+}</code></pre>
+  </section>
+
   <p class="notice" id="notice" role="status" aria-live="polite"></p>
 </main>
 
@@ -254,11 +419,12 @@ class Database
       ['config/database.php', 'database-config']
     ];
 
-    const separator = '\\n\\n' + '='.repeat(72) + '\\n\\n';
     const allCode = files.map(([filename, id]) =>
-      'FILE: ' + filename + '\\n' + '-'.repeat(72) + '\\n\\n' +
+      '='.repeat(72) + '\n\n' +
+      'FILE: ' + filename + '\n' +
+      '-'.repeat(72) + '\n\n' +
       document.getElementById(id).textContent.trim()
-    ).join(separator);
+    ).join('\n\n');
 
     try {
       await navigator.clipboard.writeText(allCode);
