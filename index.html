@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f7f7f5">
+  <title>World Explorer — PHP Code Snippets</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 40px 18px; background: #f7f7f5; color: #20211f;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main { width: min(900px, 100%); margin: 0 auto; }
+    header { margin-bottom: 30px; }
+    .eyebrow { color: #777970; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { margin: 9px 0 8px; font-size: clamp(27px, 5vw, 38px); letter-spacing: -.04em; }
+    header p { margin: 0; color: #686b64; line-height: 1.6; }
+    .snippet {
+      margin: 18px 0; overflow: hidden; border: 1px solid #e2e3de;
+      border-radius: 12px; background: #fff;
+    }
+    .snippet-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 14px;
+      padding: 15px 17px; border-bottom: 1px solid #ecece8;
+    }
+    .file-title { min-width: 0; }
+    .file-title h2 { margin: 0; font-size: 15px; font-weight: 700; }
+    .file-title p { margin: 4px 0 0; color: #85877f; font-size: 12px; }
+    button {
+      flex: 0 0 auto; border: 0; border-radius: 7px; padding: 9px 13px;
+      background: #20211f; color: #fff; font: inherit; font-size: 13px;
+      font-weight: 650; cursor: pointer;
+    }
+    button:hover { background: #41433e; }
+    button:focus-visible { outline: 3px solid #a8c8ff; outline-offset: 2px; }
+    pre {
+      margin: 0; padding: 18px; overflow-x: auto; background: #fbfbfa;
+      color: #292b27; font: 13px/1.65 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      tab-size: 4;
+    }
+    code { white-space: pre; }
+    .notice { min-height: 20px; margin: 12px 2px 0; color: #39734b; font-size: 13px; }
+    @media (max-width: 520px) {
+      body { padding: 27px 12px; }
+      .snippet-head { align-items: flex-start; }
+      button { padding: 8px 10px; }
+      pre { padding: 14px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">World Explorer · PHP / PDO</div>
+    <h1>World Explorer — Code Files</h1>
+    <p>Copy one file at a time, or copy all four files together.</p>
+    <div style="margin-top:16px">
+      <button type="button" id="copy-all">Copy All</button>
+    </div>
+  </header>
+
+  <section class="snippet" aria-labelledby="country-controller-title">
+    <div class="snippet-head">
+      <div class="file-title">
+        <h2 id="country-controller-title">Country Controller</h2>
+        <p>controllers/CountryController.php</p>
+      </div>
+      <button type="button" data-copy="country-controller">Copy code</button>
+    </div>
+    <pre><code id="country-controller">&lt;?php
+require_once __DIR__ . '/../models/Country.php';
+
+class CountryController
+{
+    private Country $model;
+
+    public function __construct()
+    {
+        $this-&gt;model = new Country();
+    }
+
+    public function dashboard(): void
+    {
+        $keyword = trim($_GET['q'] ?? '');
+
+        $countries = $keyword !== '' ? $this-&gt;model-&gt;search($keyword) : $this-&gt;model-&gt;getAll();
+        $totalCountries  = $this-&gt;model-&gt;countCountries();
+        $totalContinents = $this-&gt;model-&gt;countContinents();
+        $totalPopulation = $this-&gt;model-&gt;getTotalPopulation();
+        $mostPopulated   = $this-&gt;model-&gt;getMostPopulated();
+
+        require __DIR__ . '/../views/dashboard.php';
+    }
+}</code></pre>
+  </section>
+
+  <section class="snippet" aria-labelledby="country-model-title">
+    <div class="snippet-head">
+      <div class="file-title">
+        <h2 id="country-model-title">Country Model</h2>
+        <p>models/Country.php</p>
+      </div>
+      <button type="button" data-copy="country-model">Copy code</button>
+    </div>
+    <pre><code id="country-model">&lt;?php
+require_once __DIR__ . '/../../config/database.php';
+
+class Country
+{
+    private PDO $pdo;
+
+    public function __construct()
+    {
+        $this-&gt;pdo = (new Database())-&gt;connect();
+    }
+
+    public function getAll(): array
+    {
+        return $this-&gt;pdo-&gt;query('SELECT * FROM country ORDER BY name ASC')-&gt;fetchAll();
+    }
+
+    public function search(string $keyword): array
+    {
+        $st = $this-&gt;pdo-&gt;prepare('SELECT * FROM country WHERE name LIKE :k ORDER BY name ASC');
+        $st-&gt;execute(['k' =&gt; '%' . $keyword . '%']);
+        return $st-&gt;fetchAll();
+    }
+
+    public function countCountries(): int
+    {
+        return (int) $this-&gt;pdo-&gt;query('SELECT COUNT(*) FROM country')-&gt;fetchColumn();
+    }
+
+    public function countContinents(): int
+    {
+        return (int) $this-&gt;pdo-&gt;query('SELECT COUNT(DISTINCT continent) FROM country')-&gt;fetchColumn();
+    }
+
+    public function getTotalPopulation(): int
+    {
+        return (int) $this-&gt;pdo-&gt;query('SELECT SUM(population) FROM country')-&gt;fetchColumn();
+    }
+
+    public function getMostPopulated(): array
+    {
+        return $this-&gt;pdo-&gt;query('SELECT name, population FROM country ORDER BY population DESC LIMIT 1')-&gt;fetch()
+            ?: ['name' =&gt; '-', 'population' =&gt; 0];
+    }
+}</code></pre>
+  </section>
+
+  <section class="snippet" aria-labelledby="dashboard-title">
+    <div class="snippet-head">
+      <div class="file-title">
+        <h2 id="dashboard-title">Dashboard View</h2>
+        <p>views/dashboard.php</p>
+      </div>
+      <button type="button" data-copy="dashboard-view">Copy code</button>
+    </div>
+    <pre><code id="dashboard-view">    &lt;p&gt;Nombre total de pays&lt;/p&gt;
+    &lt;h3&gt;&lt;?= $totalCountries ?&gt;&lt;/h3&gt;
+
+    &lt;p&gt;Nombre de continents&lt;/p&gt;
+    &lt;h3&gt;&lt;?= $totalContinents ?&gt;&lt;/h3&gt;
+
+    &lt;p&gt;Population totale&lt;/p&gt;
+    &lt;h3&gt;&lt;?= $totalPopulation ?&gt;&lt;/h3&gt;
+
+    &lt;p&gt;&lt;?= $mostPopulated['population'] ?&gt;&lt;/p&gt;
+    &lt;h3&gt;&lt;?= $mostPopulated['name'] ?&gt;&lt;/h3&gt;
+
+    &lt;form method="get" class="row g-2 mb-3"&gt;
+        &lt;input type="text" name="q" placeholder="Rechercher un pays..." value="&lt;?= $keyword ?&gt;"&gt;
+        &lt;button type="submit"&gt;Rechercher&lt;/button&gt;
+   &lt;/form&gt;
+
+&lt;table&gt;
+        &lt;tr&gt;&lt;th&gt;Pays&lt;/th&gt;&lt;th&gt;Code&lt;/th&gt;&lt;th&gt;Continent&lt;/th&gt;&lt;th&gt;Capitale&lt;/th&gt;&lt;th&gt;Population&lt;/th&gt;&lt;th&gt;Devise&lt;/th&gt;&lt;/tr&gt;
+        &lt;?php foreach ($countries as $c): ?&gt;
+            &lt;tr&gt;
+                &lt;td&gt;&lt;?= $c['name'] ?&gt;&lt;/td&gt;
+                &lt;td&gt;&lt;?= $c['iso_code'] ?&gt;&lt;/td&gt;
+                &lt;td&gt;&lt;?= $c['continent'] ?&gt;&lt;/td&gt;
+                &lt;td&gt;&lt;?= $c['capital'] ?&gt;&lt;/td&gt;
+                &lt;td&gt;&lt;?= $c['population'] ?&gt;&lt;/td&gt;
+                &lt;td&gt;&lt;?= $c['currency'] ?&gt;&lt;/td&gt;
+            &lt;/tr&gt;
+        &lt;?php endforeach; ?&gt;
+&lt;/table&gt;</code></pre>
+  </section>
+
+  <section class="snippet" aria-labelledby="database-title">
+    <div class="snippet-head">
+      <div class="file-title">
+        <h2 id="database-title">Database Connection</h2>
+        <p>config/database.php</p>
+      </div>
+      <button type="button" data-copy="database-config">Copy code</button>
+    </div>
+    <pre><code id="database-config">&lt;?php
+class Database
+{
+    public function connect(): PDO
+    {
+        try {
+            return new PDO('mysql:host=localhost;dbname=world_explorer;charset=utf8mb4','root','root');
+        } catch (PDOException $e) {
+            die('Erreur de connexion : ' . $e-&gt;getMessage());
+        }
+    }
+}</code></pre>
+  </section>
+  <p class="notice" id="notice" role="status" aria-live="polite"></p>
+</main>
+
+<script>
+  const notice = document.getElementById('notice');
+
+  async function copyCode(id, button) {
+    const code = document.getElementById(id).textContent;
+    try {
+      await navigator.clipboard.writeText(code);
+    } catch (error) {
+      const temporary = document.createElement('textarea');
+      temporary.value = code;
+      temporary.style.position = 'fixed';
+      temporary.style.opacity = '0';
+      document.body.appendChild(temporary);
+      temporary.select();
+      const copied = document.execCommand('copy');
+      temporary.remove();
+      if (!copied) {
+        notice.textContent = 'Copy failed. Please select and copy the code manually.';
+        return;
+      }
+    }
+
+    const original = button.textContent;
+    button.textContent = 'Copied!';
+    notice.textContent = 'Copied ' + id.replaceAll('-', ' ') + ' to clipboard.';
+    window.setTimeout(() => { button.textContent = original; }, 1600);
+  }
+
+  document.querySelectorAll('[data-copy]').forEach(button => {
+    button.addEventListener('click', () => copyCode(button.dataset.copy, button));
+  });
+
+  document.getElementById('copy-all').addEventListener('click', async (event) => {
+    const files = [
+      ['controllers/CountryController.php', 'country-controller'],
+      ['models/Country.php', 'country-model'],
+      ['views/dashboard.php', 'dashboard-view'],
+      ['config/database.php', 'database-config']
+    ];
+
+    const separator = '\\n\\n' + '='.repeat(72) + '\\n\\n';
+    const allCode = files.map(([filename, id]) =>
+      'FILE: ' + filename + '\\n' + '-'.repeat(72) + '\\n\\n' +
+      document.getElementById(id).textContent.trim()
+    ).join(separator);
+
+    try {
+      await navigator.clipboard.writeText(allCode);
+    } catch (error) {
+      const temporary = document.createElement('textarea');
+      temporary.value = allCode;
+      temporary.style.position = 'fixed';
+      temporary.style.opacity = '0';
+      document.body.appendChild(temporary);
+      temporary.select();
+      const copied = document.execCommand('copy');
+      temporary.remove();
+      if (!copied) {
+        notice.textContent = 'Copy failed. Please copy the files individually.';
+        return;
+      }
+    }
+
+    const button = event.currentTarget;
+    button.textContent = 'Copied All!';
+    notice.textContent = 'All four code files copied to clipboard.';
+    window.setTimeout(() => { button.textContent = 'Copy All'; }, 1600);
+  });
+</script>
+</body>
+</html>
